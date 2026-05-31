@@ -539,15 +539,14 @@ class _ViewedTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<DocumentSnapshot>(
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       future: FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox();
-        final user =
-            snapshot.data!.data() as Map<String, dynamic>? ?? {};
+        final user = snapshot.data!.data() ?? {};
         final name = user['name'] ?? 'User';
         return Column(
           children: [
