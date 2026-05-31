@@ -6,6 +6,10 @@ workflows:
       flutter: 3.19.0
       java: 17
     scripts:
+      - name: Set up Flutter project
+        script: |
+          flutter create --project-name talkzone --org com.talkzone .
+          cp -r lib/* lib/
       - name: Get Flutter packages
         script: flutter pub get
       - name: Build APK
