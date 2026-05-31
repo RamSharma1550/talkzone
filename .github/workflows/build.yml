@@ -26,16 +26,14 @@ jobs:
       - name: Setup Android
         run: |
           flutter create --project-name talkzone --org com.talkzone --platforms android temp_project
-          cp -r temp_project/android .
+          cp -r temp_project/android ./android
           rm -rf temp_project
           ls -la
 
       - name: Get packages
-        working-directory: ${{ github.workspace }}
         run: flutter pub get
 
       - name: Build APK
-        working-directory: ${{ github.workspace }}
         run: |
           chmod +x android/gradlew
           flutter build apk --debug
