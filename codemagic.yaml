@@ -6,10 +6,8 @@ workflows:
       flutter: 3.19.0
       java: 17
     scripts:
-      - name: Create Flutter project structure
-        script: |
-          flutter create --project-name talkzone --org com.talkzone --platforms android .
-          flutter pub get
+      - name: Get packages
+        script: flutter pub get
       - name: Build APK
         script: flutter build apk --debug
     artifacts:
