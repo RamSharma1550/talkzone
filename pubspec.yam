@@ -1,54 +1,30 @@
-name: Build TalkZone APK
+name: talkzone
+description: TalkZone - A modern chat application
+publish_to: 'none'
+version: 1.0.0+1
 
-on:
-  push:
-    branches: [ main ]
+environment:
+  sdk: '>=3.0.0 <4.0.0'
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_storage: ^11.5.6
+  agora_rtc_engine: ^6.2.6
+  cupertino_icons: ^1.0.2
+  image_picker: ^1.0.7
+  cached_network_image: ^3.3.1
+  intl: ^0.18.1
+  uuid: ^4.2.2
+  permission_handler: ^11.1.0
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.0'
-          channel: 'stable'
-
-      - name: Debug - List files
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Files in current directory:"
-          ls -la
-          echo "All files recursively:"
-          find . -name "*.yaml" -o -name "*.dart" | head -30
-
-      - name: Setup project
-        run: |
-          flutter create --project-name talkzone --org com.talkzone --platforms android temp_project
-          cp -r temp_project/android .
-          rm -rf temp_project
-
-      - name: Get packages
-        run: flutter pub get
-
-      - name: Grant Gradle permission
-        run: chmod +x android/gradlew
-
-      - name: Build APK
-        run: flutter build apk --debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TalkZone-APK
-          path: build/app/outputs/flutter-apk/app-debug.apk
+flutter:
+  uses-material-design: true
