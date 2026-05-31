@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "145717484019",
+    "project_id": "talkzone-b574d",
+    "storage_bucket": "talkzone-b574d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:145717484019:android:6a0207124a7548bb7e5a86",
+        "android_client_info": {
+          "package_name": "com.talkzone.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIRv__PynCmL_JSyO3uG1NAR2jWRT6H50"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
