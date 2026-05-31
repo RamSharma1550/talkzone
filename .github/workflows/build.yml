@@ -25,21 +25,21 @@ jobs:
 
       - name: Create Flutter project
         run: |
+          cp pubspec.yaml pubspec_backup.yaml
+          cp -r lib lib_backup
           flutter create --project-name talkzone --org com.talkzone --platforms android .
-          cp -f pubspec.yaml pubspec.yaml.bak
-
-      - name: Restore pubspec
-        run: cp -f pubspec.yaml.bak pubspec.yaml
+          cp pubspec_backup.yaml pubspec.yaml
+          rm -rf lib
+          cp -r lib_backup lib
 
       - name: Get packages
         run: flutter pub get
 
+      - name: Grant Gradle permission
+        run: chmod +x android/gradlew
+
       - name: Build APK
-        run: |
-          cd android
-          chmod +x gradlew
-          cd ..
-          flutter build apk --debug --no-shrink
+        run: flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
