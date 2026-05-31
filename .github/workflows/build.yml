@@ -1,0 +1,39 @@
+name: Build TalkZone APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+
+      - name: Create Flutter project
+        run: |
+          flutter create --project-name talkzone --org com.talkzone --platforms android .
+          
+      - name: Copy our lib files
+        run: |
+          flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: TalkZone-APK
+          path: build/app/outputs/flutter-apk/app-debug.apk
