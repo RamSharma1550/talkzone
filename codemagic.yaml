@@ -7,9 +7,13 @@ workflows:
       java: 17
     scripts:
       - name: Get packages
-        script: flutter pub get
+        script: |
+          cd $CM_BUILD_DIR
+          flutter pub get
       - name: Build APK
-        script: flutter build apk --debug
+        script: |
+          cd $CM_BUILD_DIR
+          flutter build apk --debug
     artifacts:
       - build/**/outputs/**/*.apk
     publishing:
