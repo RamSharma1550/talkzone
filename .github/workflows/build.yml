@@ -23,12 +23,14 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
+      - name: Remove existing android folder
+        run: rm -rf android
+
       - name: Setup Android
         run: |
           flutter create --project-name talkzone --org com.talkzone --platforms android temp_project
-          cp -r temp_project/android ./android
+          mv temp_project/android ./android
           rm -rf temp_project
-          ls -la
 
       - name: Get packages
         run: flutter pub get
