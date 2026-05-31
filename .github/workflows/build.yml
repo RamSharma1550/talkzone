@@ -27,6 +27,7 @@ jobs:
         run: |
           flutter create --project-name talkzone --org com.talkzone --platforms android temp_project
           cp -r temp_project/android ./android
+          cp -r temp_project/android/app/src/main/res ./android/app/src/main/res
           rm -rf temp_project
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
           echo "android.useAndroidX=true" >> android/gradle.properties
