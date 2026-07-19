@@ -28,20 +28,22 @@ jobs:
           flutter create --project-name talkzone --org com.talkzone --platforms android temp_project
           rm -rf android
           cp -r temp_project/android ./android
-          cp -r lib temp_project/lib
-          cp pubspec.yaml temp_project/pubspec.yaml
-          cd temp_project
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=false" >> android/gradle.properties
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m" >> android/gradle.properties
-          flutter pub get
-          flutter build apk --debug
-          cd ..
-          cp temp_project/build/app/outputs/flutter-apk/app-debug.apk ./app-debug.apk
+          rm -rf temp_project
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --debug
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TalkZone-APK
-          path: app-debug.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
