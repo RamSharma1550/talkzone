@@ -13,8 +13,27 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final _currentUser = FirebaseAuth.instance.currentUser!;
 
-  final List<Widget> _screens = [
+  @override
+  void initState() {
+    super.initState();
+    _saveUserToFirebase();
+  }
+
+  Future<void> _saveUserToFirebase() async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUser.uid)
+        .set({
+      'uid': _currentUser.uid,
+      'name': 'User_${_currentUser.uid.substring(0, 5)}',
+      'phone': '',
+      'lastSeen': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  List<Widget> get _screens => [
     const ChatsTab(),
     const CallsTab(),
     const StatusScreen(),
@@ -168,11 +187,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Color(0xFF00A884));
                 }
                 final users = snapshot.data!.docs.where((doc) =>
-                    doc.id !=
-                    FirebaseAuth.instance.currentUser!.uid).toList();
+                    doc.id != _currentUser.uid).toList();
                 if (users.isEmpty) {
-                  return const Text('No users found',
-                      style: TextStyle(color: Colors.white54));
+                  return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      'No users yet!\nAsk your friend to install TalkZone.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white38, fontSize: 14),
+                    ),
+                  );
                 }
                 return ListView.builder(
                   shrinkWrap: true,
@@ -193,9 +217,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: Text(user['name'] ?? 'Unknown',
                           style:
                               const TextStyle(color: Colors.white)),
-                      subtitle: Text(user['phone'] ?? '',
-                          style: const TextStyle(
-                              color: Colors.white38, fontSize: 12)),
+                      subtitle: Text(
+                        'TalkZone User',
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 12)),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -273,7 +298,7 @@ class ChatsTab extends StatelessWidget {
               builder: (context, userSnapshot) {
                 if (!userSnapshot.hasData) return const SizedBox();
                 final user = userSnapshot.data!.data()
-                    as Map<String, dynamic>;
+                    as Map<String, dynamic>? ?? {};
                 return _ChatTile(
                   name: user['name'] ?? 'Unknown',
                   lastMessage: chat['lastMessage'] ?? '',
@@ -473,7 +498,8 @@ class ProfileTab extends StatelessWidget {
           .doc(user.uid)
           .get(),
       builder: (context, snapshot) {
-        final data = snapshot.data?.data() as Map<String, dynamic>?;
+        final data =
+            snapshot.data?.data() as Map<String, dynamic>? ?? {};
         return Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -484,7 +510,7 @@ class ProfileTab extends StatelessWidget {
                 backgroundColor:
                     const Color(0xFF00A884).withOpacity(0.2),
                 child: Text(
-                  (data?['name'] ?? 'U')[0].toUpperCase(),
+                  (data['name'] ?? 'U')[0].toUpperCase(),
                   style: const TextStyle(
                     color: Color(0xFF00A884),
                     fontSize: 36,
@@ -494,27 +520,29 @@ class ProfileTab extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                data?['name'] ?? 'Your Name',
+                data['name'] ?? 'TalkZone User',
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold),
               ),
-              Text(
-                user.phoneNumber ?? '',
-                style: const TextStyle(
+              const Text(
+                'TalkZone User',
+                style: TextStyle(
                     color: Colors.white38, fontSize: 14),
               ),
               const SizedBox(height: 32),
               _profileOption(
                   Icons.edit, 'Edit Profile', Colors.blue, () {}),
               _profileOption(
-                  Icons.notifications_outlined, 'Notifications',
-                  Colors.orange, () {}),
-              _profileOption(Icons.privacy_tip_outlined, 'Privacy',
-                  Colors.purple, () {}),
-              _profileOption(Icons.logout, 'Logout', Colors.red,
-                  () async {
+                  Icons.notifications_outlined,
+                  'Notifications',
+                  Colors.orange,
+                  () {}),
+              _profileOption(Icons.privacy_tip_outlined,
+                  'Privacy', Colors.purple, () {}),
+              _profileOption(
+                  Icons.logout, 'Logout', Colors.red, () async {
                 await FirebaseAuth.instance.signOut();
               }),
             ],
@@ -531,8 +559,7 @@ class ProfileTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: ListTile(
         leading: Container(
@@ -544,7 +571,8 @@ class ProfileTab extends StatelessWidget {
           child: Icon(icon, color: color, size: 20),
         ),
         title: Text(title,
-            style: const TextStyle(color: Colors.white, fontSize: 14)),
+            style:
+                const TextStyle(color: Colors.white, fontSize: 14)),
         trailing: const Icon(Icons.chevron_right,
             color: Colors.white24, size: 18),
         onTap: onTap,
