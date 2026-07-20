@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'dart:io';
+
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
 
@@ -20,15 +20,16 @@ class _StatusScreenState extends State<StatusScreen> {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
     try {
-      final file = File(picked.path);
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('status/${_currentUser.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
+      final cloudinary = CloudinaryPublic('wj1xcolo', 'talkzone', cache: false);
+      final response = await cloudinary.uploadFile(
+        CloudinaryFile.fromFile(
+          picked.path,
+          resourceType: CloudinaryResourceType.Image,
+        ),
+      );
       await FirebaseFirestore.instance.collection('status').add({
         'userId': _currentUser.uid,
-        'imageUrl': url,
+        'imageUrl': response.secureUrl,
         'timestamp': FieldValue.serverTimestamp(),
         'expiresAt': Timestamp.fromDate(
           DateTime.now().add(const Duration(hours: 24)),
@@ -58,13 +59,8 @@ class _StatusScreenState extends State<StatusScreen> {
       backgroundColor: const Color(0xFF0A0D12),
       body: Column(
         children: [
-          // My Status Hero Card
           _MyStatusCard(onTap: _addStatus),
-
-          // Recent Updates
           _sectionLabel('Recent Updates'),
-
-          // Horizontal Story Cards
           SizedBox(
             height: 148,
             child: StreamBuilder<QuerySnapshot>(
@@ -80,22 +76,20 @@ class _StatusScreenState extends State<StatusScreen> {
                         color: Color(0xFF00A884)),
                   );
                 }
-
                 final Map<String, List<QueryDocumentSnapshot>> grouped = {};
                 for (var doc in snapshot.data!.docs) {
                   final data = doc.data() as Map<String, dynamic>;
                   final uid = data['userId'] as String;
                   grouped.putIfAbsent(uid, () => []).add(doc);
                 }
-
                 final unseenUids = grouped.keys.where((uid) {
                   return grouped[uid]!.any((s) {
                     final data = s.data() as Map<String, dynamic>;
-                    final viewers = List<String>.from(data['viewers'] ?? []);
+                    final viewers =
+                        List<String>.from(data['viewers'] ?? []);
                     return !viewers.contains(_currentUser.uid);
                   });
                 }).toList();
-
                 if (unseenUids.isEmpty) {
                   return Center(
                     child: Column(
@@ -112,7 +106,6 @@ class _StatusScreenState extends State<StatusScreen> {
                     ),
                   );
                 }
-
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -129,10 +122,7 @@ class _StatusScreenState extends State<StatusScreen> {
               },
             ),
           ),
-
-          // Viewed Section
           _sectionLabel('Viewed'),
-
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -142,14 +132,12 @@ class _StatusScreenState extends State<StatusScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const SizedBox();
-
                 final Map<String, List<QueryDocumentSnapshot>> grouped = {};
                 for (var doc in snapshot.data!.docs) {
                   final data = doc.data() as Map<String, dynamic>;
                   final uid = data['userId'] as String;
                   grouped.putIfAbsent(uid, () => []).add(doc);
                 }
-
                 final seenUids = grouped.keys.where((uid) {
                   return grouped[uid]!.every((s) {
                     final data = s.data() as Map<String, dynamic>;
@@ -158,7 +146,6 @@ class _StatusScreenState extends State<StatusScreen> {
                     return viewers.contains(_currentUser.uid);
                   });
                 }).toList();
-
                 if (seenUids.isEmpty) {
                   return const Center(
                     child: Text('No viewed statuses',
@@ -166,7 +153,6 @@ class _StatusScreenState extends State<StatusScreen> {
                             color: Colors.white24, fontSize: 12)),
                   );
                 }
-
                 return ListView.builder(
                   itemCount: seenUids.length,
                   itemBuilder: (context, index) {
@@ -204,8 +190,7 @@ class _StatusScreenState extends State<StatusScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Expanded(
-              child: Divider(color: Colors.white.withOpacity(0.05))),
+          Expanded(child: Divider(color: Colors.white.withOpacity(0.05))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
@@ -216,16 +201,14 @@ class _StatusScreenState extends State<StatusScreen> {
                   letterSpacing: 1.5),
             ),
           ),
-          Expanded(
-              child: Divider(color: Colors.white.withOpacity(0.05))),
+          Expanded(child: Divider(color: Colors.white.withOpacity(0.05))),
         ],
       ),
     );
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
+    final diff = DateTime.now().difference(time);
     if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
     if (diff.inHours < 24) return '${diff.inHours} hr ago';
     return '${diff.inDays} days ago';
@@ -246,18 +229,10 @@ class _MyStatusCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF0A2A20), Color(0xFF091A14)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF00A884).withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00A884).withOpacity(0.08),
-              blurRadius: 20,
-              spreadRadius: 2,
-            ),
-          ],
+          border:
+              Border.all(color: const Color(0xFF00A884).withOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -282,17 +257,9 @@ class _MyStatusCard extends StatelessWidget {
                   child: Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00A884), Color(0xFF00ffcc)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00A884).withOpacity(0.4),
-                          blurRadius: 6,
-                        ),
-                      ],
+                      color: Color(0xFF00A884),
                     ),
                     child: const Icon(Icons.add,
                         color: Colors.white, size: 14),
@@ -337,13 +304,6 @@ class _StoryCard extends StatelessWidget {
     required this.currentUserId,
   });
 
-  final List<List<Color>> _gradients = const [
-    [Color(0xFF0A2A20), Color(0xFF1A4A30)],
-    [Color(0xFF1A1A3A), Color(0xFF2A1A4A)],
-    [Color(0xFF2A1A0A), Color(0xFF4A2A1A)],
-    [Color(0xFF0A1A2A), Color(0xFF1A2A4A)],
-  ];
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<DocumentSnapshot>(
@@ -357,47 +317,39 @@ class _StoryCard extends StatelessWidget {
             snapshot.data!.data() as Map<String, dynamic>? ?? {};
         final name = user['name'] ?? 'User';
         final data = statuses.last.data() as Map<String, dynamic>;
+        final imageUrl = data['imageUrl'] ?? '';
         final time = data['timestamp'] != null
-            ? _formatTime(
-                (data['timestamp'] as Timestamp).toDate())
+            ? _formatTime((data['timestamp'] as Timestamp).toDate())
             : '';
-        final gradIndex = name.codeUnitAt(0) % _gradients.length;
 
         return GestureDetector(
-          onTap: () => _viewStatus(context, name),
+          onTap: () => _viewStatus(),
           child: Container(
             width: 100,
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: _gradients[gradIndex],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
-                  color: Colors.white.withOpacity(0.06)),
+              color: const Color(0xFF0A2A20),
+              image: imageUrl.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.06)),
             ),
             child: Stack(
               children: [
-                // Avatar top left
                 Positioned(
                   top: 8,
                   left: 8,
                   child: Container(
                     width: 32,
                     height: 32,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00A884), Color(0xFF00D4A0)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00A884).withOpacity(0.4),
-                          blurRadius: 6,
-                        ),
-                      ],
+                      color: Color(0xFF00A884),
                     ),
                     child: Center(
                       child: Text(
@@ -410,13 +362,6 @@ class _StoryCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Pulsing dot
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: _PulsingDot(),
-                ),
-                // Bottom info
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -459,7 +404,7 @@ class _StoryCard extends StatelessWidget {
     );
   }
 
-  void _viewStatus(BuildContext context, String name) async {
+  void _viewStatus() async {
     for (var status in statuses) {
       await FirebaseFirestore.instance
           .collection('status')
@@ -474,55 +419,6 @@ class _StoryCard extends StatelessWidget {
     final diff = DateTime.now().difference(time);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     return '${diff.inHours}h ago';
-  }
-}
-
-class _PulsingDot extends StatefulWidget {
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
-
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _anim = Tween(begin: 0.6, end: 1.0).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFF00A884).withOpacity(_anim.value),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00A884).withOpacity(0.6),
-              blurRadius: 6 * _anim.value,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
